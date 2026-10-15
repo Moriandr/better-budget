@@ -1,0 +1,6 @@
+.DS_Store
+Thumbs.db
+.clasp.json
+.clasprc.json
+node_modules/
+*.xlsx

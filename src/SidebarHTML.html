@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        padding: 16px;
+        margin: 0;
+        background-color: #f8f9fa;
+        color: #202124;
+      }
+      h3 {
+        margin-top: 0;
+        margin-bottom: 6px;
+        color: #1a73e8;
+        font-size: 18px;
+        text-align: center;
+      }
+      .tabinfo {
+        font-size: 12px;
+        color: #5f6368;
+        text-align: center;
+        margin-bottom: 14px;
+      }
+      .banner {
+        display: none;
+        margin-bottom: 14px;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        background-color: #fef7e0;
+        color: #8a5a00;
+        border: 1px solid #fde293;
+      }
+      .form-group { margin-bottom: 14px; }
+      label {
+        display: block;
+        font-weight: 600;
+        font-size: 12px;
+        margin-bottom: 4px;
+        color: #5f6368;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      .opt { font-weight: 400; text-transform: none; letter-spacing: 0; }
+      input[type="date"],
+      input[type="text"],
+      input[type="number"],
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #dadce0;
+        border-radius: 4px;
+        box-sizing: border-box;
+        font-size: 14px;
+        background-color: #ffffff;
+      }
+      input:focus, select:focus {
+        border-color: #1a73e8;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(26,115,232,0.2);
+      }
+      .types {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        margin-bottom: 16px;
+      }
+      button.type-btn {
+        width: auto;
+        margin: 0;
+        padding: 9px 6px;
+        background-color: #ffffff;
+        color: #202124;
+        border: 1px solid #dadce0;
+        font-size: 12.5px;
+        font-weight: 600;
+      }
+      button.type-btn:hover { background-color: #f1f3f4; }
+      button.type-btn.active {
+        background-color: #e8f0fe;
+        border-color: #1a73e8;
+        color: #1a73e8;
+      }
+      .amount-row { display: flex; gap: 10px; }
+      .amount-row .form-group { flex: 1; }
+      .hint {
+        font-size: 12px;
+        line-height: 1.4;
+        color: #5f6368;
+        margin: -4px 0 12px;
+      }
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: #1a73e8;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        margin-top: 8px;
+      }
+      button:hover { background-color: #1557b0; }
+      button:disabled {
+        background-color: #dadce0;
+        color: #80868b;
+        cursor: not-allowed;
+      }
+      #status {
+        margin-top: 14px;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 13px;
+        text-align: center;
+        display: none;
+      }
+      .success { background-color: #e6f4ea; color: #137333; border: 1px solid #ceedd5; }
+      .error { background-color: #fce8e6; color: #c5221f; border: 1px solid #fad2cf; }
+      .balance {
+        display: none;
+        margin-top: 18px;
+        padding-top: 12px;
+        border-top: 1px solid #dadce0;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .balance.ok { color: #137333; }
+      .balance.warn { color: #8a5a00; }
+    </style>
+  </head>
+  <body>
+
+    <h3>Record a Transaction</h3>
+    <div class="tabinfo" id="tabInfo"></div>
+    <div class="banner" id="banner"></div>
+
+    <label>What happened?</label>
+    <div class="types" id="types"></div>
+
+    <form id="entryForm" novalidate>
+      <div class="form-group">
+        <label for="date">Date</label>
+        <input type="date" id="date">
+      </div>
+
+      <div class="form-group">
+        <label for="accountA" id="labelA">Account</label>
+        <select id="accountA"></select>
+      </div>
+
+      <div class="form-group" id="groupB">
+        <label for="accountB" id="labelB">Account</label>
+        <select id="accountB"></select>
+      </div>
+
+      <div class="form-group" id="groupAmount">
+        <label for="amount"><span id="amountText">Amount</span> (<span class="cur">$</span>)</label>
+        <input type="number" id="amount" step="0.01" min="0.01" inputmode="decimal" placeholder="0.00">
+      </div>
+
+      <div class="amount-row" id="groupDrCr" style="display:none">
+        <div class="form-group">
+          <label for="debit">Debit (<span class="cur">$</span>)</label>
+          <input type="number" id="debit" step="0.01" min="0" inputmode="decimal" placeholder="0.00" oninput="toggleAmountFields('debit')">
+        </div>
+        <div class="form-group">
+          <label for="credit">Credit (<span class="cur">$</span>)</label>
+          <input type="number" id="credit" step="0.01" min="0" inputmode="decimal" placeholder="0.00" oninput="toggleAmountFields('credit')">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description <span class="opt">(optional)</span></label>
+        <input type="text" id="description" placeholder="">
+      </div>
+
+      <div class="hint" id="hint"></div>
+
+      <button type="submit" id="submitBtn">Save Entry</button>
+    </form>
+
+    <div id="status"></div>
+    <div class="balance" id="balance"></div>
+
+    <script>
+      // What each entry type asks for. listA / listB are account categories (null = all).
+      const TYPES = {
+        spent: {
+          label: 'Spent money',
+          labelA: 'What was it for?',
+          listA: ['Expense'],
+          labelB: 'Paid from',
+          listB: ['Asset', 'Liability'],
+          defaultB: 'bank',
+          amountText: 'Amount spent',
+          descHint: 'e.g. Lunch with a friend',
+          hint: 'Charged it to a credit card? Choose the card under "Paid from".',
+          save: 'Save Expense'
+        },
+        received: {
+          label: 'Received money',
+          labelA: 'Where did it come from?',
+          listA: ['Revenue'],
+          labelB: 'Deposited into',
+          listB: ['Asset'],
+          defaultB: 'bank',
+          amountText: 'Amount received',
+          descHint: 'e.g. October paycheck',
+          hint: '',
+          save: 'Save Income'
+        },
+        moved: {
+          label: 'Moved money',
+          labelA: 'Move from',
+          listA: ['Asset', 'Liability'],
+          defaultA: 'bank',
+          labelB: 'Move to',
+          listB: ['Asset', 'Liability'],
+          amountText: 'Amount moved',
+          descHint: 'e.g. Credit card payment',
+          hint: 'Paying off a credit card or loan? Move the money from your bank to that card or loan.',
+          save: 'Save Transfer'
+        },
+        refund: {
+          label: 'Got money back',
+          labelA: 'What was it refunded for?',
+          listA: ['Expense'],
+          labelB: 'Money went into',
+          listB: ['Asset', 'Liability'],
+          defaultB: 'bank',
+          amountText: 'Amount received',
+          descHint: 'e.g. Work lunch reimbursement',
+          hint: 'This lowers the spending in that category, for example for a reimbursement or a returned item.',
+          save: 'Save Refund'
+        },
+        opening: {
+          label: 'Opening balance',
+          labelA: 'Which account?',
+          listA: ['Asset', 'Liability'],
+          noB: true,
+          amountText: 'Balance on the date below',
+          descHint: 'Opening balance',
+          hint: 'Enter what the account held, or what you owed, on that date. Do this once per account. For your primary bank account, leave the Starting Balance cell at the top of the tab empty.',
+          save: 'Save Opening Balance'
+        },
+        advanced: {
+          label: 'Advanced',
+          labelA: 'Account',
+          listA: null,
+          showCode: true,
+          noB: true,
+          advanced: true,
+          descHint: '',
+          hint: 'Records ONE line. Every transaction needs a matching line on the other side, so enter that one too.',
+          save: 'Save Line'
+        }
+      };
+      const TYPE_ORDER = ['spent', 'received', 'moved', 'refund', 'opening', 'advanced'];
+
+      let ctx = null;            // latest context from the server
+      let built = false;         // form has been populated once
+      let currentType = 'spent';
+      let lastMonthKey = '';
+
+      function el(id) { return document.getElementById(id); }
+      function pad(n) { return ('0' + n).slice(-2); }
+
+      window.onload = function () {
+        buildTypeButtons();
+        selectType('spent');
+        el('entryForm').addEventListener('submit', handleSubmit);
+        loadContext();
+      };
+
+      // The user may switch tabs while the sidebar stays open
+      window.onfocus = function () { if (ctx) loadContext(); };
+
+      function loadContext() {
+        google.script.run
+          .withSuccessHandler(applyContext)
+          .withFailureHandler(showError)
+          .getSidebarContext();
+      }
+
+      function applyContext(c) {
+        ctx = c;
+        const banner = el('banner');
+
+        if (!c.ok) {
+          banner.textContent = c.reason;
+          banner.style.display = 'block';
+          el('tabInfo').textContent = '';
+          el('balance').style.display = 'none';
+          setFormEnabled(false);
+          return;
+        }
+
+        banner.style.display = 'none';
+        el('tabInfo').textContent = 'Recording to: ' + c.tabName;
+        document.querySelectorAll('.cur').forEach(function (s) { s.textContent = c.currency || '$'; });
+        setFormEnabled(true);
+
+        // Default date: today, or the 1st of the tab's month if today falls outside it
+        if (!built || !el('date').value || c.monthKey !== lastMonthKey) {
+          el('date').value = defaultDate(c);
+        }
+        lastMonthKey = c.monthKey;
+        built = true;
+
+        fillSelects();
+        updateBalance(c.outOfBalance);
+      }
+
+      function defaultDate(c) {
+        const d = new Date();
+        const today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+        if (c.monthKey && today.slice(0, 7) !== c.monthKey) return c.monthKey + '-01';
+        return today;
+      }
+
+      // ---- Entry type buttons ------------------------------------------------
+
+      function buildTypeButtons() {
+        const wrap = el('types');
+        TYPE_ORDER.forEach(function (key) {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'type-btn';
+          b.dataset.type = key;
+          b.textContent = TYPES[key].label;
+          b.addEventListener('click', function () { selectType(key); });
+          wrap.appendChild(b);
+        });
+      }
+
+      function selectType(key) {
+        currentType = key;
+        const t = TYPES[key];
+
+        document.querySelectorAll('.type-btn').forEach(function (b) {
+          const on = b.dataset.type === key;
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-pressed', on ? 'true' : 'false');
+        });
+
+        el('labelA').textContent = t.labelA;
+        el('labelB').textContent = t.labelB || '';
+        el('groupB').style.display = t.noB ? 'none' : '';
+        el('groupAmount').style.display = t.advanced ? 'none' : '';
+        el('groupDrCr').style.display = t.advanced ? 'flex' : 'none';
+        el('amountText').textContent = t.amountText || 'Amount';
+        el('description').placeholder = t.descHint || '';
+        el('hint').textContent = t.hint || '';
+        el('hint').style.display = t.hint ? 'block' : 'none';
+        el('submitBtn').textContent = t.save;
+
+        if (ctx && ctx.ok) fillSelects();
+        clearStatus();
+      }
+
+      // ---- Dropdowns ---------------------------------------------------------
+
+      function accountsFor(categories) {
+        return ctx.accounts.filter(function (a) {
+          return !categories || categories.indexOf(a.type) !== -1;
+        });
+      }
+
+      function fillSelects() {
+        const t = TYPES[currentType];
+        const bank = ctx.primaryBank;
+        fillSelect(el('accountA'), accountsFor(t.listA), '-- Select --',
+          t.defaultA === 'bank' ? bank : '', !!t.showCode);
+        if (!t.noB) {
+          fillSelect(el('accountB'), accountsFor(t.listB), '-- Select --',
+            t.defaultB === 'bank' ? bank : '', false);
+        }
+      }
+
+      // Rebuilds a dropdown but keeps the current choice if it is still available
+      function fillSelect(sel, list, placeholder, preferred, showCode) {
+        const keep = sel.value;
+        sel.innerHTML = '';
+
+        const ph = document.createElement('option');
+        ph.value = '';
+        ph.disabled = true;
+        ph.textContent = placeholder;
+        sel.appendChild(ph);
+
+        list.forEach(function (a) {
+          const o = document.createElement('option');
+          o.value = a.code;
+          o.textContent = showCode ? a.code + ' - ' + a.name : a.name;
+          sel.appendChild(o);
+        });
+
+        const has = function (v) { return v && list.some(function (a) { return a.code === v; }); };
+        sel.value = has(keep) ? keep : (has(preferred) ? preferred : '');
+      }
+
+      // ---- Advanced: only one of debit / credit ------------------------------
+
+      function toggleAmountFields(changed) {
+        if (changed === 'debit' && el('debit').value) el('credit').value = '';
+        if (changed === 'credit' && el('credit').value) el('debit').value = '';
+      }
+
+      // ---- Saving ------------------------------------------------------------
+
+      function handleSubmit(ev) {
+        ev.preventDefault();
+        clearStatus();
+        if (!ctx || !ctx.ok) { showError('Switch to a monthly ledger tab first.'); return; }
+
+        const t = TYPES[currentType];
+        const payload = {
+          type: currentType,
+          date: el('date').value,
+          accountA: el('accountA').value,
+          accountB: t.noB ? '' : el('accountB').value,
+          amount: el('amount').value,
+          debit: el('debit').value,
+          credit: el('credit').value,
+          description: el('description').value
+        };
+
+        const problem = validate(payload, t);
+        if (problem) { showError(problem); return; }
+
+        setBusy(true);
+        google.script.run
+          .withSuccessHandler(onSaved)
+          .withFailureHandler(function (e) { setBusy(false); showError(e); })
+          .saveEntry(payload);
+      }
+
+      function validate(p, t) {
+        if (!p.date) return 'Please choose a date.';
+        if (!p.accountA) return 'Please choose: ' + t.labelA;
+        if (!t.noB && !p.accountB) return 'Please choose: ' + t.labelB;
+        if (!t.noB && p.accountA === p.accountB) return 'Please choose two different accounts.';
+        if (t.advanced) {
+          const dr = Number(p.debit) > 0, cr = Number(p.credit) > 0;
+          if (dr === cr) return 'Enter either a Debit or a Credit amount.';
+        } else if (!(Number(p.amount) > 0)) {
+          return 'Please enter an amount greater than zero.';
+        }
+        return '';
+      }
+
+      function onSaved(res) {
+        setBusy(false);
+        if (!res || !res.ok) {
+          showError(res && res.error ? res.error : 'Could not save the entry.');
+          return;
+        }
+        showSuccess(res.message);
+
+        // Ready for the next entry: keep the date and the "paid from" choice
+        el('amount').value = '';
+        el('debit').value = '';
+        el('credit').value = '';
+        el('description').value = '';
+        const t = TYPES[currentType];
+        el('accountA').value = (t.defaultA === 'bank' && ctx.primaryBank) ? ctx.primaryBank : '';
+        updateBalance(res.outOfBalance);
+      }
+
+      // ---- UI helpers ----------------------------------------------------------
+
+      function setBusy(on) {
+        const b = el('submitBtn');
+        b.disabled = on;
+        b.textContent = on ? 'Saving...' : TYPES[currentType].save;
+      }
+
+      function setFormEnabled(on) {
+        document.querySelectorAll('#entryForm input, #entryForm select, #entryForm button, .type-btn')
+          .forEach(function (x) { x.disabled = !on; });
+      }
+
+      function clearStatus() { el('status').style.display = 'none'; }
+
+      function showSuccess(msg) {
+        const s = el('status');
+        s.className = 'success';
+        s.textContent = msg;
+        s.style.display = 'block';
+      }
+
+      function showError(e) {
+        const s = el('status');
+        s.className = 'error';
+        s.textContent = (e && typeof e === 'object') ? (e.message || 'Something went wrong.') : e;
+        s.style.display = 'block';
+      }
+
+      function updateBalance(x) {
+        const b = el('balance');
+        if (x === null || x === undefined) { b.style.display = 'none'; return; }
+        b.style.display = 'block';
+        if (Math.abs(x) < 0.005) {
+          b.className = 'balance ok';
+          b.textContent = 'Ledger check: everything on this tab balances.';
+        } else {
+          b.className = 'balance warn';
+          b.textContent = 'Ledger check: this tab is out of balance by ' + (ctx.currency || '$') +
+            Math.abs(x).toFixed(2) + ', so something is only half recorded. ' +
+            'Entries made with Advanced need their matching line.';
+        }
+      }
+    </script>
+  </body>
+</html>
